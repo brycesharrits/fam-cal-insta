@@ -53,125 +53,38 @@ class BuildDraftViewModel {
         isBuilding = true
         buildError = nil
 
-        do {
-            // Step 1: Fetch best photo per month from library
-            let photosByMonth = try await photoService.fetchPhotosByMonth(year: year)
+        // TODO: re-enable when backend + photo/upload services are ready
+        // Real flow:
+        //   1. photoService.fetchPhotosByMonth(year:) → referencePhotos
+        //   2. uploadService.uploadAll(...) → uploadedKeys
+        //   3. generationService.buildDraft(...) → jobIDs
+        //   4. pollAllJobs(generationService:) → monthStates .complete / .failed
 
-            for month in 1...12 {
-                let photos = photosByMonth[month] ?? []
-                referencePhotos[month] = photos.first // pick first/best photo
-                monthStates[month] = .uploading
-            }
-
-            // Step 2: Upload all 12 reference photos in parallel
-            let selections: [(month: Int, localIdentifier: String)] = (1...12).compactMap { month in
-                guard let photo = referencePhotos[month] else { return nil }
-                return (month: month, localIdentifier: photo.id)
-            }
-
-            let uploadedKeys = try await uploadService.uploadAll(
-                selections: selections,
-                projectID: projectID,
-                progressCallback: { [weak self] completed, total in
-                    // Each upload completion triggers generating state
-                }
-            )
-
-            for month in 1...12 {
-                monthStates[month] = .generating
-            }
-
-            // Step 3: Submit generation request
-            let monthSelections = (1...12).compactMap { month -> MonthPhotoSelection? in
-                guard let key = uploadedKeys[month],
-                      let photo = referencePhotos[month] else { return nil }
-                return MonthPhotoSelection(
-                    month: month,
-                    localIdentifier: photo.id,
-                    uploadedURL: "https://\(key)" // S3 base URL + key (backend handles this)
-                )
-            }
-
-            let draft = try await generationService.buildDraft(
-                projectID: projectID,
-                monthSelections: monthSelections
-            )
-            jobIDs = draft.jobIDs
-
-            // Step 4: Poll all jobs
-            await pollAllJobs(generationService: generationService)
-
-        } catch {
-            buildError = error.localizedDescription
-            isBuilding = false
-        }
+        // STUB: simulate the upload → generating → complete progression
+        await stubBuild()
     }
 
     @MainActor
-    private func pollAllJobs(generationService: any CalendarGenerationService) async {
-        await withTaskGroup(of: Void.self) { group in
-            for jobID in jobIDs {
-                group.addTask { [weak self] in
-                    await self?.pollJob(jobID: jobID, generationService: generationService)
-                }
-            }
+    private func stubBuild() async {
+        // Phase 1: uploading (staggered per month)
+        for month in 1...12 {
+            monthStates[month] = .uploading
+            try? await Task.sleep(for: .milliseconds(80))
         }
+
+        // Phase 2: all generating
+        for month in 1...12 {
+            monthStates[month] = .generating
+        }
+
+        // Phase 3: complete one by one with random-ish delays
+        for month in 1...12 {
+            let delay = Int.random(in: 600...2000)
+            try? await Task.sleep(for: .milliseconds(delay))
+            monthStates[month] = .complete(imageURL: "https://picsum.photos/seed/month\(month)/400/500")
+        }
+
         isBuilding = false
-        isComplete = monthStates.values.allSatisfy { $0.isTerminal }
-    }
-
-    @MainActor
-    private func pollJob(jobID: String, generationService: any CalendarGenerationService) async {
-        var backoff: UInt64 = 2_000_000_000 // 2 seconds in nanoseconds
-        let maxBackoff: UInt64 = 10_000_000_000 // 10 seconds
-
-        for _ in 0..<60 { // max ~5 minutes of polling
-            try? await Task.sleep(nanoseconds: backoff)
-            backoff = min(backoff + 1_000_000_000, maxBackoff)
-
-            do {
-                let job = try await generationService.pollJobStatus(jobID: jobID)
-
-                switch job.status {
-                case "complete":
-                    if let imageURL = job.resultImageUrl {
-                        // Find which month this job belongs to and update
-                        updateMonthForJob(job: job, imageURL: imageURL)
-                    }
-                    return
-                case "failed":
-                    updateMonthForJob(job: job, error: job.error ?? "Generation failed")
-                    return
-                default:
-                    break // still pending/processing, keep polling
-                }
-            } catch {
-                // Network error — retry
-            }
-        }
-    }
-
-    @MainActor
-    private func updateMonthForJob(job: GenerationJobResponse, imageURL: String? = nil, error: String? = nil) {
-        // We need to map job → month. The job response includes month_id but we need
-        // to correlate. For now, we track this via job order (jobs are created in month order).
-        // A more robust approach: include month number in the job response.
-        // TODO: add month number to GenerationJobResponse in backend
-        if let imageURL {
-            // Find and update the first generating month that matches
-            for month in 1...12 {
-                if case .generating = monthStates[month] {
-                    monthStates[month] = .complete(imageURL: imageURL)
-                    return
-                }
-            }
-        } else if let error {
-            for month in 1...12 {
-                if case .generating = monthStates[month] {
-                    monthStates[month] = .failed(error: error)
-                    return
-                }
-            }
-        }
+        isComplete = true
     }
 }

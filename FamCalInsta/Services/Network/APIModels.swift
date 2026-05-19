@@ -25,6 +25,7 @@ struct CreateProjectRequest: Encodable {
     let name: String
     let year: Int
     let theme: String
+    let prompt: String?
 }
 
 struct UpdateProjectRequest: Encodable {

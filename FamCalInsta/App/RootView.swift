@@ -11,7 +11,7 @@ struct RootView: View {
             case .unauthenticated:
                 OnboardingView()
             case .authenticated:
-                HomeView()
+                MainTabView()
             }
         }
         .animation(.easeInOut(duration: 0.4), value: appState.authState)

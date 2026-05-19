@@ -38,7 +38,7 @@ struct BuildDraftView: View {
                     .font(.brandTitle)
                     .multilineTextAlignment(.center)
 
-                Text("We'll scan your \(viewModel.year) photos and generate 12 unique \(viewModel.theme.displayName) images — one for each month.")
+                Text("We'll pick the best photo from each month of \(viewModel.year) and generate 12 unique \(viewModel.theme.displayName) images.")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

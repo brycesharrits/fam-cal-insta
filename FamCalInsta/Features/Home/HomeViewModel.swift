@@ -13,7 +13,6 @@ struct Medium: Identifiable {
 
 @Observable
 class HomeViewModel {
-    var recentProjects: [ProjectResponse] = []
     var lockedMediumTapped: Medium? = nil
 
     let mediums: [Medium] = [
@@ -22,12 +21,4 @@ class HomeViewModel {
         Medium(id: "cards", displayName: "Holiday Cards", description: "Share the magic with family", iconName: "envelope.open.fill", isEnabled: false, isHero: false),
         Medium(id: "scrapbook", displayName: "School Year", description: "Capture every milestone", iconName: "pencil.and.ruler.fill", isEnabled: false, isHero: false),
     ]
-
-    func loadRecentProjects(apiClient: APIClient) async {
-        do {
-            recentProjects = try await apiClient.request(.listProjects)
-        } catch {
-            // Silently fail — this is non-critical
-        }
-    }
 }
