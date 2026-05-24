@@ -59,7 +59,8 @@ struct BuildDraftView: View {
                     await viewModel.build(
                         photoService: services.photoLibraryService,
                         uploadService: services.uploadService,
-                        generationService: services.generationService
+                        generationService: services.generationService,
+                        apiClient: services.apiClient
                     )
                 }
             } label: {

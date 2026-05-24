@@ -48,36 +48,42 @@ class BuildDraftViewModel {
     func build(
         photoService: any PhotoLibraryService,
         uploadService: PhotoUploadService,
-        generationService: any CalendarGenerationService
+        generationService: any CalendarGenerationService,
+        apiClient: APIClient
     ) async {
         isBuilding = true
         buildError = nil
 
-        // TODO: re-enable when backend + photo/upload services are ready
-        // Real flow:
-        //   1. photoService.fetchPhotosByMonth(year:) → referencePhotos
-        //   2. uploadService.uploadAll(...) → uploadedKeys
-        //   3. generationService.buildDraft(...) → jobIDs
-        //   4. pollAllJobs(generationService:) → monthStates .complete / .failed
-
-        // STUB: simulate the upload → generating → complete progression
-        await stubBuild()
-    }
-
-    @MainActor
-    private func stubBuild() async {
-        // Phase 1: uploading (staggered per month)
+        // Phase 1: show uploading state (staggered per month)
         for month in 1...12 {
             monthStates[month] = .uploading
             try? await Task.sleep(for: .milliseconds(80))
         }
 
-        // Phase 2: all generating
+        // Phase 2: round-trip to local backend dev stub. No real photo upload
+        // or imagegen yet — just proves the network plumbing works.
+        let stubMonths = (1...12).map {
+            MonthGenerationInput(month: $0, referenceImageUrl: "stub://\($0)", assetId: nil)
+        }
+        let response: GenerateCalendarResponse
+        do {
+            response = try await apiClient.request(
+                .devGenerate,
+                body: GenerateCalendarRequest(months: stubMonths)
+            )
+        } catch {
+            buildError = error.localizedDescription
+            isBuilding = false
+            return
+        }
+
+        jobIDs = response.jobIds
         for month in 1...12 {
             monthStates[month] = .generating
         }
 
-        // Phase 3: complete one by one with random-ish delays
+        // Phase 3: fake completion progression so the magical loading UI still
+        // has something to show. Real polling lands when imagegen wires up.
         for month in 1...12 {
             let delay = Int.random(in: 600...2000)
             try? await Task.sleep(for: .milliseconds(delay))

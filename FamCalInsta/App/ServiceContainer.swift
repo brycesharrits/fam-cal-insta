@@ -15,7 +15,12 @@ class ServiceContainer {
     let uploadService: PhotoUploadService
 
     init() {
-        let apiClient = APIClient(baseURL: URL(string: "https://api.famcalinsta.com")!)
+        #if DEBUG
+        let baseURL = URL(string: "http://localhost:8080")!
+        #else
+        let baseURL = URL(string: "https://api.famcalinsta.com")!
+        #endif
+        let apiClient = APIClient(baseURL: baseURL)
         self.apiClient = apiClient
         self.authService = AppleAuthService(apiClient: apiClient)
         self.photoLibraryService = PHPhotoLibraryService()

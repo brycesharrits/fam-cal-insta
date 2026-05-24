@@ -16,6 +16,7 @@ enum APIEndpoint {
     case generateCalendar(projectID: String)
     case regenerateMonth(projectID: String, month: Int)
     case getJob(id: String)
+    case devGenerate
 
     // Uploads
     case presignUpload
@@ -43,6 +44,7 @@ enum APIEndpoint {
         case .generateCalendar(let id):          return "/api/v1/projects/\(id)/generate"
         case .regenerateMonth(let id, let m):    return "/api/v1/projects/\(id)/months/\(m)/regenerate"
         case .getJob(let id):                    return "/api/v1/jobs/\(id)"
+        case .devGenerate:                       return "/api/v1/dev/generate"
         case .presignUpload:                     return "/api/v1/uploads/presign"
         case .getTokenBalance:                   return "/api/v1/tokens/balance"
         case .getTokenHistory:                   return "/api/v1/tokens/history"

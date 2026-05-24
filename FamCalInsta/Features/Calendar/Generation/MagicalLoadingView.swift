@@ -5,7 +5,6 @@ struct MagicalLoadingView: View {
     let onComplete: () -> Void
 
     @State private var pulseOpacity: Double = 0.5
-    @State private var hasNavigated = false
 
     private let monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
 
@@ -60,15 +59,6 @@ struct MagicalLoadingView: View {
         }
         .onAppear {
             pulseOpacity = 0.9
-        }
-        .onChange(of: viewModel.isComplete) { _, complete in
-            if complete && !hasNavigated {
-                hasNavigated = true
-                // Brief delay before auto-navigating so user can see all months complete
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    onComplete()
-                }
-            }
         }
     }
 }
