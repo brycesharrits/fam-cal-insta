@@ -1,12 +1,14 @@
 import SwiftUI
 
 struct ThemeCustomizeView: View {
+    @Environment(ServiceContainer.self) private var services
     let theme: Theme
     @Binding var navigationPath: NavigationPath
 
     @State private var promptText = ""
     @State private var isGenerating = false
     @State private var tapCount = 0
+    @State private var errorMessage: String?
 
     private let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -22,6 +24,12 @@ struct ThemeCustomizeView: View {
             VStack(alignment: .leading, spacing: 24) {
                 promptSection
                 cardsGrid
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.callout)
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 4)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
@@ -84,8 +92,23 @@ struct ThemeCustomizeView: View {
 
     private func generate() async {
         isGenerating = true
-        try? await Task.sleep(for: .milliseconds(600))
-        navigationPath.append(NavigationDestination.buildDraft(projectID: "stub-project-123", theme: theme))
+        errorMessage = nil
+
+        let year = Calendar.current.component(.year, from: Date())
+        let trimmedPrompt = promptText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let request = CreateProjectRequest(
+            name: "\(theme.displayName) \(year)",
+            year: year,
+            theme: theme.id,
+            prompt: trimmedPrompt.isEmpty ? nil : trimmedPrompt
+        )
+
+        do {
+            let project: ProjectResponse = try await services.apiClient.request(.createProject, body: request)
+            navigationPath.append(NavigationDestination.buildDraft(projectID: project.id, theme: theme))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
         isGenerating = false
     }
 }

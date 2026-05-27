@@ -46,11 +46,13 @@ struct SignInView: View {
                 .opacity(0.01) // Invisible — real button above handles UI, this triggers our service
             }
 
-            Button("Continue without signing in") {
-                viewModel.signedInUser = UserModel(id: "dev-guest", email: "guest@local", tokenBalance: 100)
+            #if DEBUG
+            Button("Continue with dev account") {
+                Task { await signInAsDev() }
             }
             .foregroundStyle(.secondary)
             .padding(.bottom, 32)
+            #endif
         }
         .background(Color.brandBackground.ignoresSafeArea())
         .disabled(viewModel.isLoading)
@@ -68,6 +70,18 @@ struct SignInView: View {
         viewModel.errorMessage = nil
         do {
             let user = try await services.authService.signInWithApple()
+            viewModel.signedInUser = user
+        } catch {
+            viewModel.errorMessage = error.localizedDescription
+        }
+        viewModel.isLoading = false
+    }
+
+    private func signInAsDev() async {
+        viewModel.isLoading = true
+        viewModel.errorMessage = nil
+        do {
+            let user = try await services.authService.signInAsDevUser()
             viewModel.signedInUser = user
         } catch {
             viewModel.errorMessage = error.localizedDescription

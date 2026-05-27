@@ -26,6 +26,21 @@ class AppleAuthService: NSObject, AuthService, ASAuthorizationControllerDelegate
         }
     }
 
+    func signInAsDevUser() async throws -> UserModel {
+        let response: AuthResponse = try await apiClient.request(.devAuth, body: nil as String?)
+        await apiClient.setToken(response.token)
+        persistSession(token: response.token, user: response.user)
+
+        let user = UserModel(
+            id: response.user.id,
+            email: response.user.email,
+            tokenBalance: response.user.tokenBalance
+        )
+        currentUser = user
+        isAuthenticated = true
+        return user
+    }
+
     func signOut() async throws {
         await apiClient.clearToken()
         UserDefaults.standard.removeObject(forKey: "jwt_token")
