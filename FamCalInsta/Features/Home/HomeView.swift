@@ -24,7 +24,12 @@ struct HomeView: View {
                             ForEach(viewModel.mediums) { medium in
                                 MediumBrickView(medium: medium) {
                                     if medium.isEnabled {
-                                        navigationPath.append(NavigationDestination.themeSelection)
+                                        switch medium.id {
+                                        case "testlab":
+                                            navigationPath.append(NavigationDestination.testLab)
+                                        default:
+                                            navigationPath.append(NavigationDestination.themeSelection)
+                                        }
                                     } else {
                                         viewModel.lockedMediumTapped = medium
                                     }
@@ -58,6 +63,8 @@ struct HomeView: View {
                     BuildDraftView(projectID: projectID, theme: theme, navigationPath: $navigationPath)
                 case .canvas(let projectID):
                     CalendarCanvasView(projectID: projectID)
+                case .testLab:
+                    TestLabView()
                 }
             }
         }
@@ -72,4 +79,5 @@ enum NavigationDestination: Hashable {
     case themeCustomize(theme: Theme)
     case buildDraft(projectID: String, theme: Theme)
     case canvas(projectID: String)
+    case testLab
 }

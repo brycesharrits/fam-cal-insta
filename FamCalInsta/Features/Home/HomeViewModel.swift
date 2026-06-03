@@ -17,6 +17,7 @@ class HomeViewModel {
 
     let mediums: [Medium] = [
         Medium(id: "calendar", displayName: "Family Calendar", description: "12 months of AI-generated memories", iconName: "calendar", isEnabled: true, isHero: true),
+        Medium(id: "testlab", displayName: "Test Lab", description: "One-off image gen (spike)", iconName: "flask", isEnabled: true, isHero: false),
         Medium(id: "photobook", displayName: "Photo Book", description: "Your year in a beautiful book", iconName: "book.closed", isEnabled: false, isHero: false),
         Medium(id: "cards", displayName: "Holiday Cards", description: "Share the magic with family", iconName: "envelope.open.fill", isEnabled: false, isHero: false),
         Medium(id: "scrapbook", displayName: "School Year", description: "Capture every milestone", iconName: "pencil.and.ruler.fill", isEnabled: false, isHero: false),

@@ -33,6 +33,9 @@ enum APIEndpoint {
     case exportPDF(projectID: String)
     case getOrder(id: String)
 
+    // Test Lab (disposable spike surface)
+    case testGenerate
+
     var path: String {
         switch self {
         case .appleAuth:                         return "/api/v1/auth/apple"
@@ -55,6 +58,7 @@ enum APIEndpoint {
         case .submitPrintOrder(let id):          return "/api/v1/projects/\(id)/orders/print"
         case .exportPDF(let id):                 return "/api/v1/projects/\(id)/orders/pdf-export"
         case .getOrder(let id):                  return "/api/v1/orders/\(id)"
+        case .testGenerate:                      return "/api/v1/test/generate"
         }
     }
 

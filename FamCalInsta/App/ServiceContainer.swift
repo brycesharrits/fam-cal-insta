@@ -13,6 +13,7 @@ class ServiceContainer {
     let printService: any PrintService
     let eventKitService: any EventKitService
     let uploadService: PhotoUploadService
+    let testGenerationService: any TestGenerationService
 
     init() {
         #if DEBUG
@@ -29,5 +30,6 @@ class ServiceContainer {
         self.printService = BackendPrintService(apiClient: apiClient)
         self.eventKitService = EventKitServiceImpl()
         self.uploadService = PhotoUploadService(apiClient: apiClient)
+        self.testGenerationService = BackendTestGenerationService(apiClient: apiClient)
     }
 }
