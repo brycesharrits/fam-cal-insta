@@ -11,6 +11,7 @@ class PersistenceController {
         let schema = Schema([
             CalendarProjectModel.self,
             CalendarMonthModel.self,
+            SavedCreationModel.self,
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

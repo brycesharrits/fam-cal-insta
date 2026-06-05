@@ -27,12 +27,17 @@ struct MonthEditorView: View {
                 VStack(spacing: 24) {
                     // Generated image
                     if let imageURL = viewModel.generatedImageURL, let url = URL(string: imageURL) {
-                        AsyncImage(url: url) { image in
-                            image.resizable().aspectRatio(contentMode: .fit)
-                        } placeholder: {
-                            Color(.systemGray5).frame(height: 200)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        GeneratedImageView(
+                            imageURL: url,
+                            metadata: SavedCreationMetadata(
+                                prompt: viewModel.promptNudge.isEmpty ? nil : viewModel.promptNudge,
+                                monthLabel: monthNames[month.month - 1],
+                                projectID: projectID
+                            ),
+                            contentMode: .fit,
+                            cornerRadius: 16
+                        )
+                        .frame(minHeight: 200)
                         .padding(.horizontal, 16)
                     }
 

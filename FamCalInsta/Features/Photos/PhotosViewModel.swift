@@ -3,7 +3,7 @@ import Observation
 import Photos
 import PhotosUI
 
-struct PhotoAlbum: Identifiable {
+struct PhotoAlbum: Identifiable, Hashable {
     let id: String // PHAssetCollection localIdentifier
     let title: String
     let photoCount: Int
@@ -16,11 +16,15 @@ class PhotosViewModel {
     var isLoadingAlbums = false
     var authorizationStatus: PHAuthorizationStatus = .notDetermined
 
-    // Photos the user has starred/pinned for use in creations
-    // Stored as localIdentifiers in UserDefaults
-    var starredPhotoIDs: Set<String> {
-        get { Set(UserDefaults.standard.stringArray(forKey: "starredPhotoIDs") ?? []) }
-        set { UserDefaults.standard.set(Array(newValue), forKey: "starredPhotoIDs") }
+    // Photos the user has starred/pinned for use in creations.
+    // Mirrored to UserDefaults so the set survives app launches.
+    var starredPhotoIDs: Set<String>
+
+    private static let starredDefaultsKey = "starredPhotoIDs"
+
+    init() {
+        let stored = UserDefaults.standard.stringArray(forKey: Self.starredDefaultsKey) ?? []
+        self.starredPhotoIDs = Set(stored)
     }
 
     func checkAuthorization() {
@@ -88,12 +92,11 @@ class PhotosViewModel {
     }
 
     func toggleStar(photoID: String) {
-        var current = starredPhotoIDs
-        if current.contains(photoID) {
-            current.remove(photoID)
+        if starredPhotoIDs.contains(photoID) {
+            starredPhotoIDs.remove(photoID)
         } else {
-            current.insert(photoID)
+            starredPhotoIDs.insert(photoID)
         }
-        starredPhotoIDs = current
+        UserDefaults.standard.set(Array(starredPhotoIDs), forKey: Self.starredDefaultsKey)
     }
 }

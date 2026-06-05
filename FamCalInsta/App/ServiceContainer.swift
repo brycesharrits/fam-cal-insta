@@ -1,9 +1,11 @@
 import Foundation
 import Observation
+import SwiftData
 
 /// ServiceContainer holds all service instances and is injected via SwiftUI environment.
 /// Protocol-based — swap any implementation without changing consumers.
 @Observable
+@MainActor
 class ServiceContainer {
     let apiClient: APIClient
     let authService: any AuthService
@@ -14,8 +16,9 @@ class ServiceContainer {
     let eventKitService: any EventKitService
     let uploadService: PhotoUploadService
     let testGenerationService: any TestGenerationService
+    let savedCreationsService: any SavedCreationsService
 
-    init() {
+    init(modelContext: ModelContext) {
         #if DEBUG
         let baseURL = URL(string: "http://localhost:8080")!
         #else
@@ -31,5 +34,6 @@ class ServiceContainer {
         self.eventKitService = EventKitServiceImpl()
         self.uploadService = PhotoUploadService(apiClient: apiClient)
         self.testGenerationService = BackendTestGenerationService(apiClient: apiClient)
+        self.savedCreationsService = SavedCreationsServiceImpl(context: modelContext)
     }
 }

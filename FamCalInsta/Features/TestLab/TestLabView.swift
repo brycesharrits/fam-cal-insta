@@ -1,5 +1,6 @@
 // Disposable Test Lab medium UI. Delete when the spike concludes.
 
+import Photos
 import PhotosUI
 import SwiftUI
 
@@ -7,6 +8,8 @@ struct TestLabView: View {
     @Environment(ServiceContainer.self) private var services
     @State private var viewModel: TestLabViewModel?
     @State private var photosPickerItem: PhotosPickerItem?
+    @State private var resultShareImage: TestLabShareItem?
+    @State private var resultToast: String?
 
     var body: some View {
         Group {
@@ -148,17 +151,98 @@ struct TestLabView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Result")
                 .font(.headline)
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+            ZStack(alignment: .topTrailing) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                resultMenu(image: image)
+                    .padding(8)
+
+                if let resultToast {
+                    Text(resultToast)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .padding(.top, 44)
+                        .padding(.trailing, 8)
+                        .transition(.opacity)
+                }
+            }
             if let ms = durationMs {
                 Text("Generated in \(ms) ms")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
+        .sheet(item: $resultShareImage) { item in
+            TestLabShareSheet(items: [item.image])
+        }
+    }
+
+    @ViewBuilder
+    private func resultMenu(image: UIImage) -> some View {
+        Menu {
+            Button {
+                Task { await saveResultToLibrary(image: image) }
+            } label: {
+                Label("Save to Library", systemImage: "square.and.arrow.down")
+            }
+            Button {
+                Task { await saveResultToCameraRoll(image: image) }
+            } label: {
+                Label("Save to Photos", systemImage: "photo.badge.plus")
+            }
+            Button {
+                resultShareImage = TestLabShareItem(image: image)
+            } label: {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(.black.opacity(0.45), in: Circle())
+        }
+    }
+
+    private func saveResultToLibrary(image: UIImage) async {
+        guard let data = image.jpegData(compressionQuality: 0.9) else { return }
+        let metadata = SavedCreationMetadata(prompt: viewModel?.prompt, themeName: "Test Lab")
+        do {
+            _ = try await services.savedCreationsService.save(imageData: data, metadata: metadata)
+            await showResultToast("Saved")
+        } catch {
+            await showResultToast("Save failed")
+        }
+    }
+
+    private func saveResultToCameraRoll(image: UIImage) async {
+        let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+        guard status == .authorized || status == .limited else {
+            await showResultToast("Photos access denied")
+            return
+        }
+        do {
+            try await PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAsset(from: image)
+            }
+            await showResultToast("Saved to Photos")
+        } catch {
+            await showResultToast("Save failed")
+        }
+    }
+
+    @MainActor
+    private func showResultToast(_ message: String) async {
+        withAnimation { resultToast = message }
+        try? await Task.sleep(for: .seconds(1.6))
+        withAnimation { resultToast = nil }
     }
 
     private func loadPickedImage(_ item: PhotosPickerItem?, vm: TestLabViewModel) async {
@@ -177,4 +261,17 @@ struct TestLabView: View {
             vm.errorMessage = "Failed to load photo: \(error.localizedDescription)"
         }
     }
+}
+
+private struct TestLabShareItem: Identifiable {
+    let id = UUID()
+    let image: UIImage
+}
+
+private struct TestLabShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

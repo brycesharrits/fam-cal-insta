@@ -57,6 +57,37 @@ class PHPhotoLibraryService: PhotoLibraryService {
         }.value
     }
 
+    func fetchPhotos(inAlbum localIdentifier: String) async throws -> [PhotoAsset] {
+        guard authorizationStatus == .authorized || authorizationStatus == .limited else {
+            throw APIError.unauthorized
+        }
+
+        return await Task.detached(priority: .userInitiated) {
+            let collections = PHAssetCollection.fetchAssetCollections(
+                withLocalIdentifiers: [localIdentifier], options: nil
+            )
+            guard let collection = collections.firstObject else { return [] }
+
+            let fetchOptions = PHFetchOptions()
+            fetchOptions.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
+            fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+
+            let assets = PHAsset.fetchAssets(in: collection, options: fetchOptions)
+            var result: [PhotoAsset] = []
+            let calendar = Calendar.current
+            assets.enumerateObjects { asset, _, _ in
+                let month = asset.creationDate.map { calendar.component(.month, from: $0) }
+                result.append(PhotoAsset(
+                    id: asset.localIdentifier,
+                    creationDate: asset.creationDate,
+                    thumbnailImage: nil,
+                    month: month
+                ))
+            }
+            return result
+        }.value
+    }
+
     func fetchThumbnail(localIdentifier: String, size: CGSize) async throws -> UIImage {
         return try await withCheckedThrowingContinuation { continuation in
             let result = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)

@@ -9,18 +9,30 @@ struct PhotosView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                switch viewModel.authorizationStatus {
-                case .authorized, .limited:
-                    authorizedBody
-                case .denied, .restricted:
-                    deniedBody
-                default:
-                    permissionPromptBody
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    SavedCreationsSection()
+
+                    Group {
+                        switch viewModel.authorizationStatus {
+                        case .authorized, .limited:
+                            albumsContent
+                        case .denied, .restricted:
+                            deniedInline
+                        default:
+                            permissionPromptInline
+                        }
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 16)
             }
+            .background(Color.brandBackground.ignoresSafeArea())
             .navigationTitle("Photos")
             .navigationBarTitleDisplayMode(.large)
+            .navigationDestination(for: PhotoAlbum.self) { album in
+                AlbumDetailView(album: album, photosViewModel: viewModel)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     PhotosPicker(
@@ -43,21 +55,15 @@ struct PhotosView: View {
 
     // MARK: - Authorized state
 
-    private var authorizedBody: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                if viewModel.isLoadingAlbums {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 40)
-                } else {
-                    albumsSection
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 16)
+    @ViewBuilder
+    private var albumsContent: some View {
+        if viewModel.isLoadingAlbums {
+            ProgressView()
+                .frame(maxWidth: .infinity)
+                .padding(.top, 40)
+        } else {
+            albumsSection
         }
-        .background(Color.brandBackground.ignoresSafeArea())
     }
 
     private var albumsSection: some View {
@@ -77,10 +83,13 @@ struct PhotosView: View {
                     spacing: 16
                 ) {
                     ForEach(viewModel.albums) { album in
-                        AlbumTileView(
-                            album: album,
-                            photoService: services.photoLibraryService
-                        )
+                        NavigationLink(value: album) {
+                            AlbumTileView(
+                                album: album,
+                                photoService: services.photoLibraryService
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -90,19 +99,18 @@ struct PhotosView: View {
 
     // MARK: - Permission prompt
 
-    private var permissionPromptBody: some View {
-        VStack(spacing: 24) {
-            Spacer()
+    private var permissionPromptInline: some View {
+        VStack(spacing: 16) {
             Image(systemName: "photo.stack")
-                .font(.system(size: 56))
+                .font(.system(size: 44))
                 .foregroundStyle(Color.brandPrimary)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("Let us browse your albums")
-                    .font(.brandTitle)
+                    .font(.brandHeadline)
                     .multilineTextAlignment(.center)
                 Text("Grant access so you can pick photos and albums as source material for your creations.")
-                    .font(.body)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -113,26 +121,24 @@ struct PhotosView: View {
             }
             .buttonStyle(BrandPrimaryButtonStyle())
             .padding(.horizontal, 32)
-
-            Spacer()
         }
-        .background(Color.brandBackground.ignoresSafeArea())
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 
     // MARK: - Denied state
 
-    private var deniedBody: some View {
-        VStack(spacing: 24) {
-            Spacer()
+    private var deniedInline: some View {
+        VStack(spacing: 16) {
             Image(systemName: "lock.fill")
-                .font(.system(size: 56))
+                .font(.system(size: 44))
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("Photo access is off")
-                    .font(.brandTitle)
+                    .font(.brandHeadline)
                 Text("Enable it in Settings to browse your albums.")
-                    .font(.body)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -145,10 +151,9 @@ struct PhotosView: View {
             }
             .buttonStyle(BrandPrimaryButtonStyle())
             .padding(.horizontal, 32)
-
-            Spacer()
         }
-        .background(Color.brandBackground.ignoresSafeArea())
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 }
 
@@ -162,18 +167,22 @@ struct AlbumTileView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.brandPrimary.opacity(0.1))
+            GeometryReader { proxy in
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.brandPrimary.opacity(0.1))
 
-                if let thumbnail {
-                    Image(uiImage: thumbnail)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Image(systemName: "photo.on.rectangle.angled")
-                        .font(.title2)
-                        .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                    if let thumbnail {
+                        Image(uiImage: thumbnail)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: proxy.size.width, height: proxy.size.height)
+                            .clipped()
+                    } else {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.title2)
+                            .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                    }
                 }
             }
             .aspectRatio(1, contentMode: .fit)

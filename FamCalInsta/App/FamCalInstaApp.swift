@@ -7,7 +7,7 @@ struct FamCalInstaApp: App {
     @State private var serviceContainer: ServiceContainer
 
     init() {
-        let container = ServiceContainer()
+        let container = ServiceContainer(modelContext: PersistenceController.shared.container.mainContext)
         _serviceContainer = State(wrappedValue: container)
     }
 
