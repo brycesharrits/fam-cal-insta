@@ -77,6 +77,7 @@ struct GenerationJobResponse: Decodable {
     let resultImageUrl: String?
     let error: String?
     let monthId: String
+    let month: Int // 1-12
     let calendarId: String
 }
 

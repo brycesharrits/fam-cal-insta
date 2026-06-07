@@ -59,8 +59,10 @@ struct HomeView: View {
                     ThemeSelectionView(navigationPath: $navigationPath)
                 case .themeCustomize(let theme):
                     ThemeCustomizeView(theme: theme, navigationPath: $navigationPath)
-                case .buildDraft(let projectID, let theme):
-                    BuildDraftView(projectID: projectID, theme: theme, navigationPath: $navigationPath)
+                case .photoPicker(let projectID, let theme):
+                    PhotoPickerView(projectID: projectID, theme: theme, navigationPath: $navigationPath)
+                case .buildDraft(let projectID, let theme, let photoLocalIDs):
+                    BuildDraftView(projectID: projectID, theme: theme, photoLocalIDs: photoLocalIDs, navigationPath: $navigationPath)
                 case .canvas(let projectID):
                     CalendarCanvasView(projectID: projectID)
                 case .testLab:
@@ -77,7 +79,8 @@ struct HomeView: View {
 enum NavigationDestination: Hashable {
     case themeSelection
     case themeCustomize(theme: Theme)
-    case buildDraft(projectID: String, theme: Theme)
+    case photoPicker(projectID: String, theme: Theme)
+    case buildDraft(projectID: String, theme: Theme, photoLocalIDs: [Int: String])
     case canvas(projectID: String)
     case testLab
 }

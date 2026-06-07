@@ -5,8 +5,12 @@ struct BuildDraftView: View {
     @Binding var navigationPath: NavigationPath
     @State private var viewModel: BuildDraftViewModel
 
-    init(projectID: String, theme: Theme, navigationPath: Binding<NavigationPath>) {
-        _viewModel = State(wrappedValue: BuildDraftViewModel(projectID: projectID, theme: theme))
+    init(projectID: String, theme: Theme, photoLocalIDs: [Int: String], navigationPath: Binding<NavigationPath>) {
+        _viewModel = State(wrappedValue: BuildDraftViewModel(
+            projectID: projectID,
+            theme: theme,
+            photoLocalIDs: photoLocalIDs
+        ))
         _navigationPath = navigationPath
     }
 

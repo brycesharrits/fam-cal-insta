@@ -9,6 +9,10 @@ struct ThemeCustomizeView: View {
     @State private var isGenerating = false
     @State private var tapCount = 0
     @State private var errorMessage: String?
+    // Cached so coming back to this view and tapping Generate again doesn't
+    // spawn duplicate projects on the backend. Invalidated when promptText changes.
+    @State private var cachedProjectID: String?
+    @State private var cachedForPrompt: String?
 
     private let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -94,8 +98,16 @@ struct ThemeCustomizeView: View {
         isGenerating = true
         errorMessage = nil
 
-        let year = Calendar.current.component(.year, from: Date())
         let trimmedPrompt = promptText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Reuse the project we already created if the prompt hasn't changed.
+        if let cached = cachedProjectID, cachedForPrompt == trimmedPrompt {
+            navigationPath.append(NavigationDestination.photoPicker(projectID: cached, theme: theme))
+            isGenerating = false
+            return
+        }
+
+        let year = Calendar.current.component(.year, from: Date())
         let request = CreateProjectRequest(
             name: "\(theme.displayName) \(year)",
             year: year,
@@ -105,7 +117,9 @@ struct ThemeCustomizeView: View {
 
         do {
             let project: ProjectResponse = try await services.apiClient.request(.createProject, body: request)
-            navigationPath.append(NavigationDestination.buildDraft(projectID: project.id, theme: theme))
+            cachedProjectID = project.id
+            cachedForPrompt = trimmedPrompt
+            navigationPath.append(NavigationDestination.photoPicker(projectID: project.id, theme: theme))
         } catch {
             errorMessage = error.localizedDescription
         }

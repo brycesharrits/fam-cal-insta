@@ -11,48 +11,31 @@ class PHPhotoLibraryService: PhotoLibraryService {
         await PHPhotoLibrary.requestAuthorization(for: .readWrite)
     }
 
-    func fetchPhotosByMonth(year: Int) async throws -> [Int: [PhotoAsset]] {
+    func fetchAllPhotos() async throws -> [PhotoAsset] {
         guard authorizationStatus == .authorized || authorizationStatus == .limited else {
             throw APIError.unauthorized
         }
 
         return await Task.detached(priority: .userInitiated) {
-            var calendar = Calendar.current
-            calendar.timeZone = TimeZone.current
+            let calendar = Calendar.current
+            let fetchOptions = PHFetchOptions()
+            fetchOptions.predicate = NSPredicate(
+                format: "mediaType == %d", PHAssetMediaType.image.rawValue
+            )
+            fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
 
-            var result: [Int: [PhotoAsset]] = [:]
-
-            for month in 1...12 {
-                var startComponents = DateComponents()
-                startComponents.year = year
-                startComponents.month = month
-                startComponents.day = 1
-                guard let startDate = calendar.date(from: startComponents),
-                      let endDate = calendar.date(byAdding: .month, value: 1, to: startDate) else { continue }
-
-                let fetchOptions = PHFetchOptions()
-                fetchOptions.predicate = NSPredicate(
-                    format: "creationDate >= %@ AND creationDate < %@ AND mediaType == %d",
-                    startDate as NSDate, endDate as NSDate, PHAssetMediaType.image.rawValue
-                )
-                fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
-                fetchOptions.fetchLimit = 50
-
-                let assets = PHAsset.fetchAssets(with: fetchOptions)
-                var photoAssets: [PhotoAsset] = []
-
-                assets.enumerateObjects { asset, _, _ in
-                    photoAssets.append(PhotoAsset(
-                        id: asset.localIdentifier,
-                        creationDate: asset.creationDate,
-                        thumbnailImage: nil, // loaded lazily
-                        month: month
-                    ))
-                }
-
-                result[month] = photoAssets
+            let assets = PHAsset.fetchAssets(with: fetchOptions)
+            var result: [PhotoAsset] = []
+            result.reserveCapacity(assets.count)
+            assets.enumerateObjects { asset, _, _ in
+                let month = asset.creationDate.map { calendar.component(.month, from: $0) }
+                result.append(PhotoAsset(
+                    id: asset.localIdentifier,
+                    creationDate: asset.creationDate,
+                    thumbnailImage: nil,
+                    month: month
+                ))
             }
-
             return result
         }.value
     }
