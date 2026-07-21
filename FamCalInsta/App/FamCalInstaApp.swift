@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GoogleSignIn
 
 @main
 struct FamCalInstaApp: App {
@@ -16,6 +17,12 @@ struct FamCalInstaApp: App {
             RootView()
                 .environment(appState)
                 .environment(serviceContainer)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
+                .task {
+                    GIDSignIn.sharedInstance.restorePreviousSignIn()
+                }
         }
         .modelContainer(PersistenceController.shared.container)
     }

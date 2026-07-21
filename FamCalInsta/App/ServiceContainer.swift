@@ -26,7 +26,7 @@ class ServiceContainer {
         #endif
         let apiClient = APIClient(baseURL: baseURL)
         self.apiClient = apiClient
-        self.authService = AppleAuthService(apiClient: apiClient)
+        self.authService = IdentityAuthService(apiClient: apiClient)
         self.photoLibraryService = PHPhotoLibraryService()
         self.generationService = BackendGenerationService(apiClient: apiClient)
         self.purchaseService = StoreKitPurchaseService(apiClient: apiClient)

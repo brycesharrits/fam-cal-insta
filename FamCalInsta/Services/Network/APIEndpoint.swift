@@ -3,7 +3,7 @@ import Foundation
 enum APIEndpoint {
     // Auth
     case appleAuth
-    case devAuth
+    case googleAuth
     case getMe
 
     // Projects
@@ -39,7 +39,7 @@ enum APIEndpoint {
     var path: String {
         switch self {
         case .appleAuth:                         return "/api/v1/auth/apple"
-        case .devAuth:                           return "/api/v1/dev/auth"
+        case .googleAuth:                        return "/api/v1/auth/google"
         case .getMe:                             return "/api/v1/users/me"
         case .listProjects:                      return "/api/v1/projects"
         case .createProject:                     return "/api/v1/projects"

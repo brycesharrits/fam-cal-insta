@@ -2,9 +2,8 @@ import Foundation
 
 // MARK: - Auth
 
-struct AppleAuthRequest: Encodable {
-    let identityToken: String
-    let authorizationCode: String
+struct OIDCSignInRequest: Encodable {
+    let idToken: String
 }
 
 struct AuthResponse: Decodable {

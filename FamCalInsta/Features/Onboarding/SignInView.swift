@@ -29,30 +29,43 @@ struct SignInView: View {
                     .padding(.horizontal, 32)
             }
 
-            SignInWithAppleButton(.signIn) { request in
-                request.requestedScopes = [.fullName, .email]
-            } onCompletion: { _ in
-                // Handled by AppleAuthService delegate
-            }
-            .signInWithAppleButtonStyle(.black)
-            .frame(height: 52)
-            .cornerRadius(12)
-            .padding(.horizontal, 32)
-            .overlay {
-                // Overlay a tap handler that calls our service
-                Button("") {
-                    Task { await signIn() }
+            VStack(spacing: 12) {
+                SignInWithAppleButton(.signIn) { request in
+                    request.requestedScopes = [.fullName, .email]
+                } onCompletion: { _ in
+                    // Handled by IdentityAuthService delegate
                 }
-                .opacity(0.01) // Invisible — real button above handles UI, this triggers our service
-            }
+                .signInWithAppleButtonStyle(.black)
+                .frame(height: 52)
+                .cornerRadius(12)
+                .overlay {
+                    Button("") {
+                        Task { await signIn(with: .apple) }
+                    }
+                    .opacity(0.01)
+                }
 
-            #if DEBUG
-            Button("Continue with dev account") {
-                Task { await signInAsDev() }
+                Button {
+                    Task { await signIn(with: .google) }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "g.circle.fill")
+                        Text("Continue with Google")
+                            .font(.body.weight(.medium))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .foregroundStyle(.primary)
+                    .background(Color(.systemBackground))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color(.separator), lineWidth: 1)
+                    )
+                    .cornerRadius(12)
+                }
             }
-            .foregroundStyle(.secondary)
+            .padding(.horizontal, 32)
             .padding(.bottom, 32)
-            #endif
         }
         .background(Color.brandBackground.ignoresSafeArea())
         .disabled(viewModel.isLoading)
@@ -65,23 +78,17 @@ struct SignInView: View {
         }
     }
 
-    private func signIn() async {
-        viewModel.isLoading = true
-        viewModel.errorMessage = nil
-        do {
-            let user = try await services.authService.signInWithApple()
-            viewModel.signedInUser = user
-        } catch {
-            viewModel.errorMessage = error.localizedDescription
-        }
-        viewModel.isLoading = false
-    }
+    private enum Provider { case apple, google }
 
-    private func signInAsDev() async {
+    private func signIn(with provider: Provider) async {
         viewModel.isLoading = true
         viewModel.errorMessage = nil
         do {
-            let user = try await services.authService.signInAsDevUser()
+            let user: UserModel
+            switch provider {
+            case .apple:  user = try await services.authService.signInWithApple()
+            case .google: user = try await services.authService.signInWithGoogle()
+            }
             viewModel.signedInUser = user
         } catch {
             viewModel.errorMessage = error.localizedDescription
