@@ -65,7 +65,16 @@ struct SignInView: View {
                 }
             }
             .padding(.horizontal, 32)
+
+            #if DEBUG
+            Button("Continue with dev account") {
+                Task { await signInAsDev() }
+            }
+            .foregroundStyle(.secondary)
             .padding(.bottom, 32)
+            #else
+            Spacer().frame(height: 32)
+            #endif
         }
         .background(Color.brandBackground.ignoresSafeArea())
         .disabled(viewModel.isLoading)
@@ -95,4 +104,17 @@ struct SignInView: View {
         }
         viewModel.isLoading = false
     }
+
+    #if DEBUG
+    private func signInAsDev() async {
+        viewModel.isLoading = true
+        viewModel.errorMessage = nil
+        do {
+            viewModel.signedInUser = try await services.authService.signInAsDevUser()
+        } catch {
+            viewModel.errorMessage = error.localizedDescription
+        }
+        viewModel.isLoading = false
+    }
+    #endif
 }

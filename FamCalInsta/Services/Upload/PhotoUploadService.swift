@@ -14,8 +14,13 @@ class PhotoUploadService {
     func upload(localIdentifier: String, projectID: String, month: Int) async throws -> String {
         // Export the asset as JPEG data
         let imageData = try await photoService.exportAssetForUpload(localIdentifier: localIdentifier)
+        return try await upload(data: imageData, projectID: projectID, month: month)
+    }
 
-        // Get presigned URL from backend
+    /// Uploads raw JPEG bytes to S3 via a presigned URL and returns the S3 object key.
+    /// Preferred path when the source is a PhotosPickerItem — no Photos permission
+    /// required, since the bytes come from the picker's out-of-process handoff.
+    func upload(data: Data, projectID: String, month: Int) async throws -> String {
         let presign: PresignResponse = try await apiClient.request(
             .presignUpload,
             body: PresignRequest(
@@ -26,11 +31,10 @@ class PhotoUploadService {
             )
         )
 
-        // Upload directly to S3
         guard let uploadURL = URL(string: presign.uploadUrl) else {
             throw APIError.invalidURL
         }
-        try await apiClient.upload(to: uploadURL, data: imageData, contentType: "image/jpeg")
+        try await apiClient.upload(to: uploadURL, data: data, contentType: "image/jpeg")
 
         return presign.objectKey
     }

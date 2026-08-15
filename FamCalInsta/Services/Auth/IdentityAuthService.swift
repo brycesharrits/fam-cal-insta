@@ -49,6 +49,13 @@ class IdentityAuthService: NSObject, AuthService, ASAuthorizationControllerDeleg
         return await completeSignIn(with: response)
     }
 
+    // MARK: - Dev
+
+    func signInAsDevUser() async throws -> UserModel {
+        let response: AuthResponse = try await apiClient.request(.devAuth, body: nil as String?)
+        return await completeSignIn(with: response)
+    }
+
     // MARK: - Sign out
 
     func signOut() async throws {

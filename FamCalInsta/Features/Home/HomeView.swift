@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
-    @Environment(AppState.self) private var appState
-
+    @Environment(ServiceContainer.self) private var services
     @State private var viewModel: HomeViewModel
     @State private var navigationPath = NavigationPath()
 
@@ -14,7 +13,10 @@ struct HomeView: View {
         NavigationStack(path: $navigationPath) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Medium selection grid
+                    if !viewModel.recentProjects.isEmpty {
+                        recentProjectsSection
+                    }
+
                     VStack(alignment: .leading, spacing: 12) {
                         Text("What would you like to create?")
                             .font(.brandHeadline)
@@ -28,7 +30,7 @@ struct HomeView: View {
                                         case "testlab":
                                             navigationPath.append(NavigationDestination.testLab)
                                         default:
-                                            navigationPath.append(NavigationDestination.themeSelection)
+                                            navigationPath.append(NavigationDestination.calendarProject(id: nil))
                                         }
                                     } else {
                                         viewModel.lockedMediumTapped = medium
@@ -44,43 +46,73 @@ struct HomeView: View {
             .background(Color.brandBackground.ignoresSafeArea())
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Text("fam-cal-insta")
-                        .font(.brandTitle)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    TokenBalanceBadgeView(balance: appState.tokenBalance)
-                }
-            }
             .navigationDestination(for: NavigationDestination.self) { destination in
                 switch destination {
-                case .themeSelection:
-                    ThemeSelectionView(navigationPath: $navigationPath)
-                case .themeCustomize(let theme):
-                    ThemeCustomizeView(theme: theme, navigationPath: $navigationPath)
-                case .photoPicker(let projectID, let theme):
-                    PhotoPickerView(projectID: projectID, theme: theme, navigationPath: $navigationPath)
-                case .buildDraft(let projectID, let theme, let photoLocalIDs):
-                    BuildDraftView(projectID: projectID, theme: theme, photoLocalIDs: photoLocalIDs, navigationPath: $navigationPath)
-                case .canvas(let projectID):
-                    CalendarCanvasView(projectID: projectID)
+                case .calendarProject(let id):
+                    CalendarProjectView(projectID: id)
                 case .testLab:
                     TestLabView()
                 }
             }
+            .task { await viewModel.loadRecentProjects(apiClient: services.apiClient) }
+            .refreshable { await viewModel.loadRecentProjects(apiClient: services.apiClient) }
         }
         .sheet(item: $viewModel.lockedMediumTapped) { medium in
             WaitlistSheetView(medium: medium)
         }
     }
+
+    private var recentProjectsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Your projects")
+                .font(.brandHeadline)
+                .padding(.horizontal, 20)
+
+            HStack(spacing: 12) {
+                ForEach(viewModel.recentProjects) { project in
+                    Button {
+                        navigationPath.append(NavigationDestination.calendarProject(id: project.id))
+                    } label: {
+                        RecentProjectCard(project: project)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+}
+
+private struct RecentProjectCard: View {
+    let project: ProjectResponse
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.brandPrimary.opacity(0.12))
+                .aspectRatio(1.2, contentMode: .fit)
+                .overlay {
+                    Image(systemName: "calendar")
+                        .font(.title)
+                        .foregroundStyle(Color.brandPrimary)
+                }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(project.name)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(String(project.year))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
 }
 
 enum NavigationDestination: Hashable {
-    case themeSelection
-    case themeCustomize(theme: Theme)
-    case photoPicker(projectID: String, theme: Theme)
-    case buildDraft(projectID: String, theme: Theme, photoLocalIDs: [Int: String])
-    case canvas(projectID: String)
+    case calendarProject(id: String?)
     case testLab
 }

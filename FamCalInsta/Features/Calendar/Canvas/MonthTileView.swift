@@ -3,13 +3,26 @@ import SwiftUI
 struct MonthTileView: View {
     let monthName: String
     let month: MonthResponse
+    let layout: MonthLayout
+    let userSlotFilledCount: Int
     let onTap: () -> Void
+
+    private var aiFilled: Bool {
+        month.generatedImageUrl != nil
+    }
+
+    private var totalFilled: Int {
+        (aiFilled ? 1 : 0) + min(userSlotFilledCount, layout.userSlotCount)
+    }
+
+    private var isComplete: Bool {
+        totalFilled >= layout.slotCount
+    }
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             imageArea
 
-            // Month label overlay
             Text(monthName)
                 .font(.caption2)
                 .fontWeight(.semibold)
@@ -20,11 +33,24 @@ struct MonthTileView: View {
                 .padding(8)
                 .allowsHitTesting(false)
 
-            // Status indicator
-            if month.status == "generating" || month.status == "pending" {
-                Color.black.opacity(0.3)
+            if !isComplete {
+                Color.black.opacity(0.35)
+                    .allowsHitTesting(false)
+            }
+
+            VStack {
+                Spacer()
+                progressDots
+                    .padding(.bottom, 6)
+                    .padding(.trailing, 8)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .allowsHitTesting(false)
+            }
+
+            if month.status == "generating" || month.status == "pending" && !aiFilled && userSlotFilledCount == 0 {
                 ProgressView()
                     .tint(.white)
+                    .opacity(month.status == "generating" ? 1 : 0)
             }
         }
         .frame(height: 130)
@@ -46,24 +72,37 @@ struct MonthTileView: View {
             .contentShape(Rectangle())
             .onTapGesture { onTap() }
         } else {
-            generatingPlaceholder
+            emptyPlaceholder
                 .contentShape(Rectangle())
                 .onTapGesture { onTap() }
         }
     }
 
-    private var generatingPlaceholder: some View {
+    private var emptyPlaceholder: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
             .fill(Color(.systemGray6))
             .overlay {
                 VStack(spacing: 4) {
-                    Image(systemName: "photo")
+                    Image(systemName: "sparkles")
                         .font(.title3)
-                        .foregroundStyle(.tertiary)
-                    Text(monthName)
+                        .foregroundStyle(Color.accentColor.opacity(0.7))
+                    Text("Tap to fill")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
             }
+    }
+
+    private var progressDots: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<layout.slotCount, id: \.self) { i in
+                Circle()
+                    .fill(i < totalFilled ? Color.white : Color.white.opacity(0.35))
+                    .frame(width: 6, height: 6)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(.ultraThinMaterial, in: Capsule())
     }
 }

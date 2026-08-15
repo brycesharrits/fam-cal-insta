@@ -21,7 +21,7 @@ struct ProjectsView: View {
             .navigationBarTitleDisplayMode(.large)
             .background(Color.brandBackground.ignoresSafeArea())
             .navigationDestination(for: String.self) { projectID in
-                CalendarCanvasView(projectID: projectID)
+                CalendarProjectView(projectID: projectID)
             }
         }
         .task { await viewModel.load(apiClient: services.apiClient) }

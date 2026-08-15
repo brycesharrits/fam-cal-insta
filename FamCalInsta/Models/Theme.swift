@@ -7,49 +7,70 @@ struct Theme: Identifiable, Hashable {
     let description: String
     let previewImageName: String? // asset catalog name
     let gradientColors: [Color]
+    let customConfig: CustomThemeConfig?
+
+    var isCustom: Bool { customConfig != nil }
+
+    init(
+        id: String,
+        displayName: String,
+        description: String,
+        previewImageName: String? = nil,
+        gradientColors: [Color],
+        customConfig: CustomThemeConfig? = nil
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.description = description
+        self.previewImageName = previewImageName
+        self.gradientColors = gradientColors
+        self.customConfig = customConfig
+    }
 
     static let catalog: [Theme] = [
         Theme(
-            id: "goofy_holiday",
-            displayName: "Goofy Holiday",
-            description: "Playful and festive, with a whimsical illustrated style",
-            previewImageName: nil,
+            id: "holiday",
+            displayName: "Holiday",
+            description: "Each month centers on its holiday — New Year, Valentine's, Halloween, Christmas, and more",
             gradientColors: [.red, .green]
         ),
         Theme(
-            id: "watercolor",
-            displayName: "Watercolor",
-            description: "Soft, delicate brushstrokes with a dreamy pastel palette",
-            previewImageName: nil,
-            gradientColors: [.blue, .purple]
+            id: "clean",
+            displayName: "Clean & Simple",
+            description: "Minimal black-and-white photography with quiet, uncluttered composition",
+            gradientColors: [.black, .gray]
         ),
         Theme(
-            id: "vintage_film",
-            displayName: "Vintage Film",
-            description: "Warm grain and nostalgic tones, like a 1970s family album",
-            previewImageName: nil,
-            gradientColors: [.orange, .brown]
-        ),
-        Theme(
-            id: "modern_minimal",
-            displayName: "Modern Minimal",
-            description: "Clean lines and bold colors with a Scandinavian design influence",
-            previewImageName: nil,
-            gradientColors: [.gray, .black]
-        ),
-        Theme(
-            id: "cozy_illustrated",
-            displayName: "Cozy Illustrated",
-            description: "Warm, hand-drawn scenes that feel intimate and heartwarming",
-            previewImageName: nil,
-            gradientColors: [.orange, .yellow]
-        ),
-        Theme(
-            id: "nature_botanical",
-            displayName: "Nature & Botanical",
-            description: "Elegant botanical illustrations with seasonal flora and fauna",
-            previewImageName: nil,
-            gradientColors: [.green, .mint]
+            id: "vintage",
+            displayName: "Vintage Photo Album",
+            description: "Warm sepia and film grain — like flipping through your grandmother's photo album",
+            gradientColors: [.brown, .orange]
         ),
     ]
+
+    /// Sentinel value for the "Custom" card in ThemeSelection. Tapping it routes
+    /// to the config screen rather than straight into LayoutPreview.
+    static let customPlaceholder = Theme(
+        id: "custom_placeholder",
+        displayName: "Custom",
+        description: "Design your own — pick your colors and describe the vibe",
+        gradientColors: [.purple, .pink, .orange]
+    )
+
+    /// Used when the user continues without picking a theme. Backend receives
+    /// theme="none"; prompt builder falls back to photo-only styling.
+    static let noTheme = Theme(
+        id: "none",
+        displayName: "No theme",
+        description: "Just your photos, no added styling",
+        gradientColors: [.gray, Color(.systemGray4)]
+    )
+}
+
+struct CustomThemeConfig: Hashable, Codable {
+    var name: String
+    var primaryHex: String
+    var secondaryHex: String
+    var tertiaryHex: String
+    var styleDescriptor: String
 }

@@ -22,14 +22,16 @@ class CalendarCanvasViewModel {
     }
 
     func updateMonth(_ updated: MonthResponse) {
-        guard var p = project, var months = p.months else { return }
+        guard let p = project, var months = p.months else { return }
         if let idx = months.firstIndex(where: { $0.id == updated.id }) {
             months[idx] = updated
         }
-        // Re-assign (ProjectResponse is a struct, immutable)
         project = ProjectResponse(
             id: p.id, name: p.name, year: p.year, theme: p.theme,
-            status: p.status, createdAt: p.createdAt, updatedAt: p.updatedAt,
+            status: p.status,
+            layoutShuffleSeed: p.layoutShuffleSeed,
+            progressStage: p.progressStage,
+            createdAt: p.createdAt, updatedAt: p.updatedAt,
             months: months
         )
     }

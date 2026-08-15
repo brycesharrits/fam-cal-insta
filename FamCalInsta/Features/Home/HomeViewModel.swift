@@ -14,6 +14,7 @@ struct Medium: Identifiable {
 @Observable
 class HomeViewModel {
     var lockedMediumTapped: Medium? = nil
+    var recentProjects: [ProjectResponse] = []
 
     let mediums: [Medium] = [
         Medium(id: "calendar", displayName: "Family Calendar", description: "12 months of AI-generated memories", iconName: "calendar", isEnabled: true, isHero: true),
@@ -22,4 +23,16 @@ class HomeViewModel {
         Medium(id: "cards", displayName: "Holiday Cards", description: "Share the magic with family", iconName: "envelope.open.fill", isEnabled: false, isHero: false),
         Medium(id: "scrapbook", displayName: "School Year", description: "Capture every milestone", iconName: "pencil.and.ruler.fill", isEnabled: false, isHero: false),
     ]
+
+    /// Loads up to 2 most-recent projects for the home screen quick-access row.
+    /// Backend already sorts by created_at DESC.
+    @MainActor
+    func loadRecentProjects(apiClient: APIClient) async {
+        do {
+            let all: [ProjectResponse] = try await apiClient.request(.listProjects)
+            recentProjects = Array(all.prefix(2))
+        } catch {
+            recentProjects = []
+        }
+    }
 }

@@ -5,5 +5,6 @@ protocol AuthService: AnyObject {
     var currentUser: UserModel? { get }
     func signInWithApple() async throws -> UserModel
     func signInWithGoogle() async throws -> UserModel
+    func signInAsDevUser() async throws -> UserModel
     func signOut() async throws
 }

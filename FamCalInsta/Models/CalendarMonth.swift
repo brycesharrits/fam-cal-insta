@@ -12,6 +12,7 @@ class CalendarMonthModel {
     var generatedImageURL: String?
     var status: String // pending | generating | complete | failed
     var familyDatesJSON: Data? // [FamilyDate] encoded as JSON
+    var userPhotoLocalIDsJSON: Data? // [String] of PHAsset localIdentifiers for user-photo slots
     var createdAt: Date
     var updatedAt: Date
 

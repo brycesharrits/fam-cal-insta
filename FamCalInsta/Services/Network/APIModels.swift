@@ -30,6 +30,7 @@ struct CreateProjectRequest: Encodable {
 struct UpdateProjectRequest: Encodable {
     let name: String?
     let theme: String?
+    let layoutShuffleSeed: Int64?
 }
 
 struct ProjectResponse: Decodable, Identifiable {
@@ -38,6 +39,8 @@ struct ProjectResponse: Decodable, Identifiable {
     let year: Int
     let theme: String
     let status: String
+    let layoutShuffleSeed: Int64
+    let progressStage: Int
     let createdAt: Date
     let updatedAt: Date
     let months: [MonthResponse]?

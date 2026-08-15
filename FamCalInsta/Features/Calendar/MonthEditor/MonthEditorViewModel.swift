@@ -7,8 +7,13 @@ import PhotosUI
 class MonthEditorViewModel {
     var generatedImageURL: String?
     var referenceImageURL: String?
+    /// Documents-relative path to a locally-cached reference photo the user
+    /// just picked. Used for immediate visual feedback before the S3 upload
+    /// wiring runs (still a TODO — handlePhotoSelection is a placeholder).
+    var referenceLocalPath: String?
     var promptNudge: String = ""
     var isRegenerating = false
+    var isUploadingReference = false
     var regenJobID: String? = nil
     var errorMessage: String? = nil
 
@@ -21,10 +26,18 @@ class MonthEditorViewModel {
         self.promptNudge = month.prompt ?? ""
     }
 
-    func handlePhotoSelection(_ item: PhotosPickerItem?, projectID: String, month: Int, uploadService: PhotoUploadService) async {
-        guard let item else { return }
-        // TODO: export selected photo + upload to S3
-        // For now, placeholder
+    /// Uploads the picked reference photo bytes to S3 and stores the resulting
+    /// object key on referenceImageURL — that key is what the Generate flow uses.
+    @MainActor
+    func uploadReference(jpegData: Data, projectID: String, month: Int, uploadService: PhotoUploadService) async {
+        isUploadingReference = true
+        errorMessage = nil
+        defer { isUploadingReference = false }
+        do {
+            referenceImageURL = try await uploadService.upload(data: jpegData, projectID: projectID, month: month)
+        } catch {
+            errorMessage = "Couldn't upload reference: \(error.localizedDescription)"
+        }
     }
 
     func regenerate(projectID: String, generationService: any CalendarGenerationService) async {

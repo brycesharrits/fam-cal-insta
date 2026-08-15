@@ -4,6 +4,7 @@ enum APIEndpoint {
     // Auth
     case appleAuth
     case googleAuth
+    case devAuth
     case getMe
 
     // Projects
@@ -40,6 +41,7 @@ enum APIEndpoint {
         switch self {
         case .appleAuth:                         return "/api/v1/auth/apple"
         case .googleAuth:                        return "/api/v1/auth/google"
+        case .devAuth:                           return "/api/v1/dev/auth"
         case .getMe:                             return "/api/v1/users/me"
         case .listProjects:                      return "/api/v1/projects"
         case .createProject:                     return "/api/v1/projects"
