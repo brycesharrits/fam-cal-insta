@@ -59,7 +59,26 @@ actor APIClient {
     }
 
     func request<T: Decodable>(_ endpoint: APIEndpoint, body: (some Encodable)? = nil as String?) async throws -> T {
-        let url = baseURL.appendingPathComponent(endpoint.path)
+        let (data, _) = try await performRequest(endpoint, body: body)
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    func requestNoContent(_ endpoint: APIEndpoint, body: (some Encodable)? = nil as String?) async throws {
+        _ = try await performRequest(endpoint, body: body)
+    }
+
+    private func performRequest(_ endpoint: APIEndpoint, body: (some Encodable)?) async throws -> (Data, HTTPURLResponse) {
+        var components = URLComponents(url: baseURL.appendingPathComponent(endpoint.path), resolvingAgainstBaseURL: false)
+        if let items = endpoint.queryItems, !items.isEmpty {
+            components?.queryItems = items
+        }
+        guard let url = components?.url else {
+            throw APIError.invalidURL
+        }
         var req = URLRequest(url: url)
         req.httpMethod = endpoint.method.rawValue
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -80,11 +99,7 @@ actor APIClient {
 
         switch httpResponse.statusCode {
         case 200...299:
-            do {
-                return try decoder.decode(T.self, from: data)
-            } catch {
-                throw APIError.decodingError(error)
-            }
+            return (data, httpResponse)
         case 401:
             throw APIError.unauthorized
         case 402:

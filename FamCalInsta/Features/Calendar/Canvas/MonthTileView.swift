@@ -47,10 +47,9 @@ struct MonthTileView: View {
                     .allowsHitTesting(false)
             }
 
-            if month.status == "generating" || month.status == "pending" && !aiFilled && userSlotFilledCount == 0 {
+            if month.status == "generating" {
                 ProgressView()
                     .tint(.white)
-                    .opacity(month.status == "generating" ? 1 : 0)
             }
         }
         .frame(height: 130)

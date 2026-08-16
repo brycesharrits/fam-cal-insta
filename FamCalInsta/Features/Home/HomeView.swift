@@ -27,8 +27,8 @@ struct HomeView: View {
                                 MediumBrickView(medium: medium) {
                                     if medium.isEnabled {
                                         switch medium.id {
-                                        case "testlab":
-                                            navigationPath.append(NavigationDestination.testLab)
+                                        case "creations":
+                                            navigationPath.append(NavigationDestination.creationsLibrary)
                                         default:
                                             navigationPath.append(NavigationDestination.calendarProject(id: nil))
                                         }
@@ -50,8 +50,8 @@ struct HomeView: View {
                 switch destination {
                 case .calendarProject(let id):
                     CalendarProjectView(projectID: id)
-                case .testLab:
-                    TestLabView()
+                case .creationsLibrary:
+                    CreationsLibraryView()
                 }
             }
             .task { await viewModel.loadRecentProjects(apiClient: services.apiClient) }
@@ -114,5 +114,5 @@ private struct RecentProjectCard: View {
 
 enum NavigationDestination: Hashable {
     case calendarProject(id: String?)
-    case testLab
+    case creationsLibrary
 }

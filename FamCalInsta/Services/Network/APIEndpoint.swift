@@ -34,8 +34,11 @@ enum APIEndpoint {
     case exportPDF(projectID: String)
     case getOrder(id: String)
 
-    // Test Lab (disposable spike surface)
-    case testGenerate
+    // Creations library — cross-medium image store
+    case createCreation
+    case listCreations(limit: Int, cursor: String?)
+    case getCreation(id: String)
+    case deleteCreation(id: String)
 
     var path: String {
         switch self {
@@ -60,21 +63,36 @@ enum APIEndpoint {
         case .submitPrintOrder(let id):          return "/api/v1/projects/\(id)/orders/print"
         case .exportPDF(let id):                 return "/api/v1/projects/\(id)/orders/pdf-export"
         case .getOrder(let id):                  return "/api/v1/orders/\(id)"
-        case .testGenerate:                      return "/api/v1/test/generate"
+        case .createCreation:                    return "/api/v1/creations"
+        case .listCreations:                     return "/api/v1/creations"
+        case .getCreation(let id):               return "/api/v1/creations/\(id)"
+        case .deleteCreation(let id):            return "/api/v1/creations/\(id)"
         }
     }
 
     var method: HTTPMethod {
         switch self {
         case .getMe, .listProjects, .getProject, .getJob,
-             .getTokenBalance, .getTokenHistory, .getTokenProducts, .getOrder:
+             .getTokenBalance, .getTokenHistory, .getTokenProducts, .getOrder,
+             .listCreations, .getCreation:
             return .GET
-        case .deleteProject:
+        case .deleteProject, .deleteCreation:
             return .DELETE
         case .updateProject:
             return .PATCH
         default:
             return .POST
+        }
+    }
+
+    var queryItems: [URLQueryItem]? {
+        switch self {
+        case .listCreations(let limit, let cursor):
+            var items = [URLQueryItem(name: "limit", value: String(limit))]
+            if let cursor { items.append(URLQueryItem(name: "cursor", value: cursor)) }
+            return items
+        default:
+            return nil
         }
     }
 }

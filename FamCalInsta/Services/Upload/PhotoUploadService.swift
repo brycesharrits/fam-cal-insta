@@ -39,6 +39,28 @@ class PhotoUploadService {
         return presign.objectKey
     }
 
+    /// Uploads a standalone reference image for the Creations playground.
+    /// Backend keys these under uploads/{user}/creation-refs/ instead of
+    /// scoping to a project + month.
+    func uploadCreationReference(data: Data) async throws -> String {
+        let presign: PresignResponse = try await apiClient.request(
+            .presignUpload,
+            body: PresignRequest(
+                filename: "reference.jpg",
+                contentType: "image/jpeg",
+                projectId: nil,
+                month: nil
+            )
+        )
+
+        guard let uploadURL = URL(string: presign.uploadUrl) else {
+            throw APIError.invalidURL
+        }
+        try await apiClient.upload(to: uploadURL, data: data, contentType: "image/jpeg")
+
+        return presign.objectKey
+    }
+
     /// Uploads all 12 months in parallel and returns a map of month → S3 object key.
     func uploadAll(
         selections: [(month: Int, localIdentifier: String)],

@@ -97,8 +97,8 @@ struct RegenerateResponse: Decodable {
 struct PresignRequest: Encodable {
     let filename: String
     let contentType: String
-    let projectId: String
-    let month: Int
+    let projectId: String?
+    let month: Int?
 }
 
 struct PresignResponse: Decodable {

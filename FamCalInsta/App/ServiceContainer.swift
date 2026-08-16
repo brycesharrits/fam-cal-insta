@@ -15,7 +15,7 @@ class ServiceContainer {
     let printService: any PrintService
     let eventKitService: any EventKitService
     let uploadService: PhotoUploadService
-    let testGenerationService: any TestGenerationService
+    let creationsService: any CreationsService
     let savedCreationsService: any SavedCreationsService
 
     init(modelContext: ModelContext) {
@@ -33,7 +33,7 @@ class ServiceContainer {
         self.printService = BackendPrintService(apiClient: apiClient)
         self.eventKitService = EventKitServiceImpl()
         self.uploadService = PhotoUploadService(apiClient: apiClient)
-        self.testGenerationService = BackendTestGenerationService(apiClient: apiClient)
+        self.creationsService = BackendCreationsService(apiClient: apiClient)
         self.savedCreationsService = SavedCreationsServiceImpl(context: modelContext)
     }
 }
