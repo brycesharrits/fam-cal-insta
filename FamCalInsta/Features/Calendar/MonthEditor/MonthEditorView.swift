@@ -101,12 +101,45 @@ struct MonthEditorView: View {
                 CreationPickerSheet { creation in
                     Task {
                         await viewModel.linkCreation(creation, creationsService: services.creationsService)
+                        guard viewModel.creationID == creation.id else { return }
                         propagateIfUpdated()
+                        await autoFillReferenceIntoUserSlot(from: creation)
                     }
                 }
             }
         }
         .presentationDetents([.large])
+    }
+
+    /// If the linked creation has a reference photo and the first user slot
+    /// is empty, download the reference and drop it into that slot. Filled
+    /// slots are preserved. Failures fall through silently — user can still
+    /// pick manually.
+    private func autoFillReferenceIntoUserSlot(from creation: CreationResponse) async {
+        guard layout.userSlotCount > 0,
+              let refURLString = creation.referenceImageUrl,
+              let refURL = URL(string: refURLString) else { return }
+        let currentSlot0 = userPhotoIDs.first ?? ""
+        guard currentSlot0.isEmpty else { return }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: refURL)
+            let relativePath = try UserPhotoCache.save(
+                data,
+                projectID: projectID,
+                month: month.month,
+                slot: 0
+            )
+            var updated = userPhotoIDs
+            while updated.count < layout.userSlotCount {
+                updated.append("")
+            }
+            updated[0] = relativePath
+            userPhotoIDs = updated
+            UserPhotoSlotStore.set(updated, projectID: projectID, month: month.month)
+        } catch {
+            // Silent — user can still add manually.
+        }
     }
 
     /// After a successful library link, roll up the new state into a

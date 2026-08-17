@@ -62,10 +62,6 @@ struct MonthTileView: View {
         if let imageURL = month.generatedImageUrl, let url = URL(string: imageURL) {
             GeneratedImageView(
                 imageURL: url,
-                metadata: SavedCreationMetadata(
-                    prompt: month.prompt,
-                    monthLabel: monthName
-                ),
                 contentMode: .fill
             )
             .contentShape(Rectangle())
