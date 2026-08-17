@@ -7,6 +7,7 @@ import PhotosUI
 class MonthEditorViewModel {
     var generatedImageURL: String?
     var referenceImageURL: String?
+    var creationID: String?
     /// Documents-relative path to a locally-cached reference photo the user
     /// just picked. Used for immediate visual feedback before the S3 upload
     /// wiring runs (still a TODO — handlePhotoSelection is a placeholder).
@@ -14,6 +15,7 @@ class MonthEditorViewModel {
     var promptNudge: String = ""
     var isRegenerating = false
     var isUploadingReference = false
+    var isLinkingFromLibrary = false
     var regenJobID: String? = nil
     var errorMessage: String? = nil
 
@@ -23,7 +25,25 @@ class MonthEditorViewModel {
         self.month = month
         self.generatedImageURL = month.generatedImageUrl
         self.referenceImageURL = month.referenceImageUrl
+        self.creationID = month.creationId
         self.promptNudge = month.prompt ?? ""
+    }
+
+    /// Assigns an existing Creation from the library to this month's AI slot
+    /// (no generation, no token cost). Backend denormalizes the image URL
+    /// onto the month, which iOS reads back into generatedImageURL.
+    @MainActor
+    func linkCreation(_ creation: CreationResponse, creationsService: any CreationsService) async {
+        isLinkingFromLibrary = true
+        errorMessage = nil
+        defer { isLinkingFromLibrary = false }
+        do {
+            let updated = try await creationsService.linkToMonth(monthID: month.id, creationID: creation.id)
+            generatedImageURL = updated.generatedImageUrl
+            creationID = updated.creationId
+        } catch {
+            errorMessage = "Couldn't link creation: \(error.localizedDescription)"
+        }
     }
 
     /// Uploads the picked reference photo bytes to S3 and stores the resulting

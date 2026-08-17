@@ -40,6 +40,9 @@ enum APIEndpoint {
     case getCreation(id: String)
     case deleteCreation(id: String)
 
+    // Months — library-driven slot swap
+    case patchMonth(id: String)
+
     var path: String {
         switch self {
         case .appleAuth:                         return "/api/v1/auth/apple"
@@ -67,6 +70,7 @@ enum APIEndpoint {
         case .listCreations:                     return "/api/v1/creations"
         case .getCreation(let id):               return "/api/v1/creations/\(id)"
         case .deleteCreation(let id):            return "/api/v1/creations/\(id)"
+        case .patchMonth(let id):                return "/api/v1/months/\(id)"
         }
     }
 
@@ -78,7 +82,7 @@ enum APIEndpoint {
             return .GET
         case .deleteProject, .deleteCreation:
             return .DELETE
-        case .updateProject:
+        case .updateProject, .patchMonth:
             return .PATCH
         default:
             return .POST

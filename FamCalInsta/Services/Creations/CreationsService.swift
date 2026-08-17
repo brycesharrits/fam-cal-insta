@@ -30,6 +30,10 @@ protocol CreationsService {
     func list(limit: Int, cursor: String?) async throws -> CreationListResponse
     func get(id: String) async throws -> CreationResponse
     func delete(id: String) async throws
+    /// Links a creation into a calendar month slot. Pass nil creationID to unlink.
+    /// Returns the freshly-loaded month with generated_image_url denormalized
+    /// from the linked creation.
+    func linkToMonth(monthID: String, creationID: String?) async throws -> MonthResponse
 }
 
 final class BackendCreationsService: CreationsService {
@@ -56,5 +60,12 @@ final class BackendCreationsService: CreationsService {
 
     func delete(id: String) async throws {
         try await apiClient.requestNoContent(.deleteCreation(id: id))
+    }
+
+    func linkToMonth(monthID: String, creationID: String?) async throws -> MonthResponse {
+        try await apiClient.request(
+            .patchMonth(id: monthID),
+            body: PatchMonthRequest(creationId: creationID)
+        )
     }
 }

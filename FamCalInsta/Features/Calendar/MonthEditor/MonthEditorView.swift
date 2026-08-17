@@ -17,6 +17,7 @@ struct MonthEditorView: View {
     @State private var userSlotPickerItem: PhotosPickerItem? = nil
     @State private var userPhotoIDs: [String] = []
     @State private var zoomedSlot: ZoomedSlot? = nil
+    @State private var showLibraryPicker: Bool = false
 
     private let monthNames = ["January","February","March","April","May","June",
                               "July","August","September","October","November","December"]
@@ -96,8 +97,33 @@ struct MonthEditorView: View {
             .fullScreenCover(item: $zoomedSlot) { slot in
                 ZoomedImageView(source: slot.source) { zoomedSlot = nil }
             }
+            .sheet(isPresented: $showLibraryPicker) {
+                CreationPickerSheet { creation in
+                    Task {
+                        await viewModel.linkCreation(creation, creationsService: services.creationsService)
+                        propagateIfUpdated()
+                    }
+                }
+            }
         }
         .presentationDetents([.large])
+    }
+
+    /// After a successful library link, roll up the new state into a
+    /// MonthResponse the parent (Canvas) can cache.
+    private func propagateIfUpdated() {
+        guard let url = viewModel.generatedImageURL else { return }
+        let updatedMonth = MonthResponse(
+            id: month.id,
+            month: month.month,
+            referencePhotoAssetId: month.referencePhotoAssetId,
+            referenceImageUrl: month.referenceImageUrl,
+            prompt: month.prompt,
+            generatedImageUrl: url,
+            creationId: viewModel.creationID,
+            status: "complete"
+        )
+        onUpdated(updatedMonth)
     }
 
     // MARK: - Slot grid
@@ -303,6 +329,28 @@ struct MonthEditorView: View {
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.accentColor)
                 Spacer()
+            }
+
+            Button {
+                showLibraryPicker = true
+            } label: {
+                if viewModel.isLinkingFromLibrary {
+                    ProgressView().frame(maxWidth: .infinity)
+                } else {
+                    Label("Pick from Creations Library", systemImage: "photo.stack")
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color.brandPrimary)
+            .disabled(viewModel.isLinkingFromLibrary)
+
+            HStack {
+                Rectangle().fill(Color(.systemGray4)).frame(height: 1)
+                Text("or generate a new one")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Rectangle().fill(Color(.systemGray4)).frame(height: 1)
             }
 
             Text("The reference photo and prompt below shape the image that fills the AI slot above.")

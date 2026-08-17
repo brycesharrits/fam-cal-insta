@@ -53,7 +53,15 @@ struct MonthResponse: Decodable, Identifiable {
     let referenceImageUrl: String?
     let prompt: String?
     let generatedImageUrl: String?
+    let creationId: String?
     let status: String
+}
+
+struct PatchMonthRequest: Encodable {
+    /// Nil means "unlink"; the backend distinguishes this from field-omitted
+    /// because we always send it. On iOS we always know whether we're linking
+    /// or unlinking, so we pass a plain String.
+    let creationId: String?
 }
 
 // MARK: - Generation
